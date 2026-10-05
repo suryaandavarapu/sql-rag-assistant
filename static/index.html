@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperStore AI Assistant</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0f0f1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        /* ── Header ── */
+        header {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 20px 40px;
+            border-bottom: 1px solid #2a2a4a;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        header h1 {
+            font-size: 24px;
+            color: #fff;
+            font-weight: 700;
+        }
+        header span {
+            font-size: 14px;
+            color: #888;
+            margin-left: auto;
+        }
+
+        /* ── Layout ── */
+        .container {
+            display: flex;
+            height: calc(100vh - 70px);
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 280px;
+            background: #1a1a2e;
+            padding: 20px;
+            border-right: 1px solid #2a2a4a;
+            overflow-y: auto;
+        }
+        .sidebar h3 {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            margin-bottom: 10px;
+            margin-top: 20px;
+        }
+        .sidebar h3:first-child { margin-top: 0; }
+
+        .sample-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: #16213e;
+            border: 1px solid #2a2a4a;
+            color: #ccc;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .sample-btn:hover {
+            background: #0f3460;
+            border-color: #4a9eff;
+            color: #fff;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-right: 6px;
+        }
+        .badge.sql { background: #1a4a1a; color: #4caf50; }
+        .badge.rag { background: #1a2a4a; color: #4a9eff; }
+        .badge.both { background: #4a3a1a; color: #ffa500; }
+
+        /* ── Main ── */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ── Input Area ── */
+        .input-area {
+            padding: 24px 32px;
+            background: #1a1a2e;
+            border-bottom: 1px solid #2a2a4a;
+        }
+        .input-row {
+            display: flex;
+            gap: 12px;
+        }
+        .input-row input {
+            flex: 1;
+            padding: 14px 18px;
+            background: #0f0f1a;
+            border: 1px solid #2a2a4a;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            transition: border 0.2s;
+        }
+        .input-row input:focus {
+            border-color: #4a9eff;
+        }
+        .input-row button {
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #4a9eff, #0066cc);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .input-row button:hover { opacity: 0.85; }
+        .input-row button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ── Results Area ── */
+        .results-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 32px;
+        }
+
+        /* ── Route Badge ── */
+        .route-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .route-sql { background: #1a4a1a; color: #4caf50; border: 1px solid #4caf50; }
+        .route-rag { background: #1a2a4a; color: #4a9eff; border: 1px solid #4a9eff; }
+        .route-both { background: #4a3a1a; color: #ffa500; border: 1px solid #ffa500; }
+
+        /* ── Cards ── */
+        .card {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .card h3 {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .card p {
+            color: #ddd;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        /* ── Table ── */
+        .table-wrap { overflow-x: auto; margin-top: 12px; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th {
+            background: #0f3460;
+            color: #4a9eff;
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+        td {
+            padding: 10px 14px;
+            border-bottom: 1px solid #2a2a4a;
+            color: #ccc;
+        }
+        tr:hover td { background: #16213e; }
+
+        /* ── SQL Code ── */
+        .sql-block {
+            background: #0a0a14;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            padding: 14px;
+            margin-top: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #4a9eff;
+            white-space: pre-wrap;
+        }
+
+        /* ── Two columns for BOTH ── */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        /* ── Loading ── */
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #888;
+            padding: 20px 0;
+        }
+        .spinner {
+            width: 20px; height: 20px;
+            border: 2px solid #2a2a4a;
+            border-top-color: #4a9eff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Empty state ── */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #444;
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+        .empty-state p { font-size: 16px; }
+
+        /* ── Context block ── */
+        .context-block {
+            background: #0a0a14;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            padding: 14px;
+            margin-top: 12px;
+            font-size: 13px;
+            color: #888;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        details summary {
+            cursor: pointer;
+            color: #4a9eff;
+            font-size: 13px;
+            margin-top: 12px;
+            user-select: none;
+        }
+        details summary:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div style="font-size:28px">🤖</div>
+    <div>
+        <h1>SuperStore AI Assistant</h1>
+        <div style="font-size:13px; color:#888; margin-top:2px">
+            Natural language interface over sales data and business policies
+        </div>
+    </div>
+    <span>Built with Flask · LangChain · FAISS · Groq</span>
+</header>
+
+<div class="container">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h3>📊 Data Questions</h3>
+        <button class="sample-btn" onclick="askQuestion(this.dataset.q)"
+            data-q="Which region has the highest total profit?">
+            <span class="badge sql">SQL</span>Which region has highest profit?
+        </button>
+        <button class="sample-btn" onclick="askQuestion(this.dataset.q)"
+            data-q="Show top 5 loss making orders">
+            <span class="badge sql">SQL</span>Top 5 loss making orders
+        </button>
+        <button class="sample-btn" onclick="askQuestion(this.dataset.q)"
+            data-q="What is total sales by category?">
+            <span class="badge sql">SQL</span>Total sales by category
+        </button>
+        <button class="sample-btn" onclick="askQuestion(this.dataset.q)"
+            data-q="Which segment has the highest average order value?">
+            <span class="badge sql">SQL</span>Highest avg order value by segment
+        </button>
+
+        <h3>📄 Policy Questions</h3>
+        <button class="sample-btn" onclick="askQuestion(this.dataset.q)"
+            data-q="What is the discount policy for furniture?">
+            <span class="badge rag">RAG</span>Furniture discount policy
+        </button>
+        <button class="sample-btn" onclick="askQuestion(this.dataset.q)"
+            data-q="What is the shipping policy for corporate customers?">
+            <span class="badge rag">RAG</span>Corporate shipping policy
+        </button>
+        <button class="sample-btn" onclick="askQuestion(this.dataset.q)"
+            data-q="Which region is flagged for profit losses?">
+            <span class="badge rag">RAG</span>Region flagged for losses
+        </button>
+
+        <h3>🔀 Combined Questions</h3>
+        <button class="sample-btn" onclick="askQuestion(this.dataset.q)"
+            data-q="Why is Central region losing money compared to company policy?">
+            <span class="badge both">BOTH</span>Central region vs policy
+        </button>
+        <button class="sample-btn" onclick="askQuestion(this.dataset.q)"
+            data-q="Compare actual discount rates with the policy limits">
+            <span class="badge both">BOTH</span>Actual vs policy discounts
+        </button>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+
+        <!-- Input -->
+        <div class="input-area">
+            <div class="input-row">
+                <input type="text" id="questionInput"
+                    placeholder="Ask anything about sales data or business policies..."
+                    onkeydown="if(event.key==='Enter') askQuestion()"/>
+                <button id="askBtn" onclick="askQuestion()">Ask →</button>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="results-area" id="resultsArea">
+            <div class="empty-state">
+                <div class="icon">💬</div>
+                <p>Ask a question to get started</p>
+                <p style="font-size:13px; margin-top:8px; color:#333">
+                    Try clicking a sample question from the sidebar
+                </p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function askQuestion(prefill) {
+        const input = document.getElementById('questionInput');
+        if (prefill) input.value = prefill;
+        const question = input.value.trim();
+        if (!question) return;
+
+        const btn = document.getElementById('askBtn');
+        const results = document.getElementById('resultsArea');
+
+        btn.disabled = true;
+        results.innerHTML = `
+            <div class="loading">
+                <div class="spinner"></div>
+                <span>Analyzing your question and querying data...</span>
+            </div>`;
+
+        fetch('/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question })
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            renderResults(question, data);
+        })
+        .catch(err => {
+            btn.disabled = false;
+            results.innerHTML = `<div class="card"><p style="color:#ff4444">Error: ${err.message}</p></div>`;
+        });
+    }
+
+    function renderResults(question, data) {
+        const results = document.getElementById('resultsArea');
+        const routeColors = { SQL: 'route-sql', RAG: 'route-rag', BOTH: 'route-both' };
+        const routeIcons = { SQL: '🟢', RAG: '🔵', BOTH: '🟡' };
+
+        let html = `
+            <div style="margin-bottom:8px; color:#888; font-size:14px">
+                ❓ <strong style="color:#fff">${question}</strong>
+            </div>
+            <div class="route-indicator ${routeColors[data.route]}">
+                ${routeIcons[data.route]} Routed to: ${data.route}
+            </div>`;
+
+        if (data.route === 'SQL') {
+            html += renderSQL(data.sql_data);
+        } else if (data.route === 'RAG') {
+            html += renderRAG(data.rag_data);
+        } else if (data.route === 'BOTH') {
+            html += `<div class="two-col">
+                <div>${renderSQL(data.sql_data)}</div>
+                <div>${renderRAG(data.rag_data)}</div>
+            </div>`;
+        }
+
+        results.innerHTML = html;
+    }
+
+    function renderSQL(data) {
+        if (data.error) {
+            return `<div class="card"><p style="color:#ff4444">SQL Error: ${data.error}</p></div>`;
+        }
+
+        let tableHTML = '';
+        if (data.rows && data.rows.length > 0) {
+            const headers = data.columns.map(c =>
+                `<th>${c.replace(/_/g,' ').toUpperCase()}</th>`).join('');
+            const rows = data.rows.map(row =>
+                `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('');
+            tableHTML = `
+                <div class="table-wrap">
+                    <table><thead><tr>${headers}</tr></thead>
+                    <tbody>${rows}</tbody></table>
+                </div>`;
+        }
+
+        return `
+            <div class="card">
+                <h3>📊 Answer from Database</h3>
+                <p>${data.explanation}</p>
+                ${tableHTML}
+                <details>
+                    <summary>View Generated SQL</summary>
+                    <div class="sql-block">${data.sql}</div>
+                </details>
+            </div>`;
+    }
+
+    function renderRAG(data) {
+        return `
+            <div class="card">
+                <h3>📄 Answer from Policy Document</h3>
+                <p>${data.answer}</p>
+                <details>
+                    <summary>View Retrieved Context</summary>
+                    <div class="context-block">${data.context}</div>
+                </details>
+            </div>`;
+    }
+</script>
+
+</body>
+</html>
